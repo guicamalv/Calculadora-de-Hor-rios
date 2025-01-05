@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Diferença de Datas e Horários</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Ajuste de Horários</h1>
+        
+        <!-- Primeira parte -->
+        <label for="real-date">Data/Horário Real:</label>
+        <input type="datetime-local" id="real-date" />
+
+        <label for="wrong-date">Data/Horário Errado:</label>
+        <input type="datetime-local" id="wrong-date" />
+
+        <button onclick="checkSameDay()">Preencher Data/horário errado com base no real</button>
+
+        <button onclick="calculateDifference()">Calcular Diferença</button>
+
+        <h3>Diferença:</h3>
+        <p id="difference"></p>
+        
+        <hr>
+
+        <!-- Segunda parte -->
+        <label for="new-date">Nova Data/Horário:</label>
+        <input type="datetime-local" id="new-date" />
+
+        <label for="new-date-type">Esse horário é:</label>
+        <select id="new-date-type">
+            <option value="real">Horário Real</option>
+            <option value="wrong">Horário Errado</option>
+        </select>
+
+        <button onclick="adjustDate()" disabled id="adjust-button">Ajustar Horário</button>
+
+        <h3>Resultado:</h3>
+        <p id="result"></p>
+    </div>
+    <script>
+        let timeDifference = 0;
+
+        function checkSameDay() {
+            const realDateInput = document.getElementById('real-date').value;
+            const wrongDateInput = document.getElementById('wrong-date').value;
+
+            if (!realDateInput) {
+                alert("Por favor, preencha o horário real primeiro.");
+                return;
+            }
+
+            const realDate = new Date(realDateInput);
+            const wrongDate = wrongDateInput ? new Date(wrongDateInput) : null;
+
+            if (!wrongDateInput || realDate.toDateString() === wrongDate.toDateString()) {
+                document.getElementById('wrong-date').value = realDateInput;
+                alert("O horário errado foi ajustado para o mesmo dia e hora do horário real.");
+            } else {
+                alert("Os horários não correspondem ao mesmo dia.");
+            }
+        }
+
+        function calculateDifference() {
+            const realDate = new Date(document.getElementById('real-date').value);
+            const wrongDate = new Date(document.getElementById('wrong-date').value);
+
+            if (isNaN(realDate) || isNaN(wrongDate)) {
+                document.getElementById('difference').innerText = "Por favor, insira as duas datas corretamente.";
+                return;
+            }
+
+            // Calculando a diferença
+            timeDifference = realDate - wrongDate;
+            const absDifference = Math.abs(timeDifference);
+
+            if (absDifference > 86400000) { // Mais de 1 dia
+                const totalSeconds = Math.floor(absDifference / 1000);
+                const years = Math.floor(totalSeconds / (60 * 60 * 24 * 365));
+                const remainingSecondsAfterYears = totalSeconds % (60 * 60 * 24 * 365);
+
+                const months = Math.floor(remainingSecondsAfterYears / (60 * 60 * 24 * 30));
+                const remainingSecondsAfterMonths = remainingSecondsAfterYears % (60 * 60 * 24 * 30);
+
+                const days = Math.floor(remainingSecondsAfterMonths / (60 * 60 * 24));
+                const remainingSecondsAfterDays = remainingSecondsAfterMonths % (60 * 60 * 24);
+
+                const hours = Math.floor(remainingSecondsAfterDays / 3600);
+                const remainingSecondsAfterHours = remainingSecondsAfterDays % 3600;
+
+                const minutes = Math.floor(remainingSecondsAfterHours / 60);
+                const seconds = remainingSecondsAfterHours % 60;
+
+                const status = timeDifference > 0 ? "atrasado" : "adiantado";
+
+                document.getElementById('difference').innerText = 
+                    `Diferença: ${years} anos, ${months} meses, ${days} dias, ${hours} horas, ${minutes} minutos e ${seconds} segundos (${status}).`;
+            } else {
+                const diffInSeconds = Math.abs(timeDifference / 1000);
+                const hours = Math.floor(diffInSeconds / 3600);
+                const minutes = Math.floor((diffInSeconds % 3600) / 60);
+                const seconds = Math.floor(diffInSeconds % 60);
+
+                const status = timeDifference > 0 ? "atrasado" : "adiantado";
+
+                document.getElementById('difference').innerText = 
+                    `Diferença: ${hours} horas, ${minutes} minutos e ${seconds} segundos (${status}).`;
+            }
+
+            // Habilitar botão de ajuste
+            document.getElementById('adjust-button').disabled = false;
+        }
+
+        function adjustDate() {
+            const newDate = new Date(document.getElementById('new-date').value);
+            const newDateType = document.getElementById('new-date-type').value;
+
+            if (isNaN(newDate)) {
+                document.getElementById('result').innerText = "Por favor, insira a nova data corretamente.";
+                return;
+            }
+
+            let adjustedDate;
+            let resultType;
+
+            if (newDateType === 'real') {
+                // Se o horário fornecido é real, calcular o horário errado
+                adjustedDate = new Date(newDate.getTime() - timeDifference);
+                resultType = "Horário Errado";
+            } else {
+                // Se o horário fornecido é errado, calcular o horário real
+                adjustedDate = new Date(newDate.getTime() + timeDifference);
+                resultType = "Horário Real";
+            }
+
+            // Formatando e exibindo o resultado
+            document.getElementById('result').innerText = `${resultType}: ${adjustedDate.toLocaleString()}`;
+        }
+    </script>
+</body>
+</html>
